@@ -167,7 +167,6 @@ extern void migratePhase4();
 extern void migratePhase5();
 extern void migratePhase10();
 extern void migratePhase11();
-extern void setMigratePhase0();
 extern byte getIrState();
 extern void handleConfigUpdate(uint16_t &var, int delta, uint16_t min, uint16_t max);
 extern Preferences preferences;

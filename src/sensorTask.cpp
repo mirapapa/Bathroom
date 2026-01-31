@@ -87,7 +87,7 @@ void sensor_task(void *pvParameters)
 
   while (1)
   {
-    nowTime = time(NULL);
+    nowTime = esp_timer_get_time() / 1000000LL;
 
     // ドア状態取得
     doorState = getDoorState(doorState);
@@ -107,7 +107,7 @@ void sensor_task(void *pvParameters)
       }
       if (irState)
         migratePhase2();
-      else if (difftime(nowTime, phaseStartTime[PHASE_0]) >= (continueTime * 60 * 60))
+      else if (difftime(nowTime, phaseStartTime[PHASE_0]) >= ((unsigned long)continueTime * 60 * 60))
         migratePhase1();
       break;
 
@@ -386,13 +386,6 @@ void detectOFF()
   alexaChangeReport(BOOL_OFF);
 }
 
-// フェーズ０設定
-void setMigratePhase0()
-{
-  nowTime = time(NULL);
-  migratePhase0();
-}
-
 // 換気扇のON/OFF状態を設定
 void setExhaustfanState(bool state)
 {
@@ -442,7 +435,7 @@ void loadConfig()
 {
   preferences.begin("system", true); // "system"という名前の領域を読み取り専用で開く
   // 保存されていなければ第2引数のデフォルト値が使われる
-  judgeOnTime = preferences.getShort("judgeOnTime", 200);
+  judgeOnTime = preferences.getShort("judgeOnTime", 100);
   startTime = preferences.getShort("startTime", 10);
   continueTime = preferences.getShort("continueTime", 80);
   preferences.end();
