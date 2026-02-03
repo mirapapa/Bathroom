@@ -1,31 +1,26 @@
 #include "common.h"
 #include <WebServer.h>
 #include <Update.h>
-#include "ota_html.h"
+#include "ota_custom.h"
 
 unsigned int progress_percent = 0;
 WebServer webOtaServer(8080);
 
 void webOtaHandleRoot()
 {
-  // PROGMEMからStringへ読み込む
-  String html = String(otaUploadHtml);
+  String html = String(OTA_COMMON_HTML);
+  String specific = String(SPECIFIC_PART);
 
-  // 基本情報の置換
+  // 1. 共通パーツの中に固有パーツを埋め込む
+  html.replace("{{SPECIFIC_CONTENT}}", getOtaHtml());
+
+  // 2. 変数を実際の値に置換（ここは適宜あなたの変数名に合わせてください）
   html.replace("{{SYS_NAME}}", SYSTEM_NAME);
   html.replace("{{SYS_VER}}", SYSTEM_VERSION);
   html.replace("{{BUILD_DATE}}", __DATE__);
   html.replace("{{RSSI}}", String(WiFi.RSSI()));
   html.replace("{{UPTIME}}", String(millis() / 1000 / 60)); // 分単位
 
-  html.replace("{{JUDGEONTIME}}", String(judgeOnTime));
-  html.replace("{{STARTTIME}}", String(startTime));
-  html.replace("{{CONTINUETIME}}", String(continueTime));
-
-  // ログ履歴の置換
-  html.replace("{{HISTORYDATA}}", getHistoryData());
-
-  // 置換後のHTMLを送信
   webOtaServer.send(200, "text/html", html);
 }
 
@@ -174,24 +169,9 @@ void ota_setup()
   webOtaServer.on("/", HTTP_GET, webOtaHandleRoot);
   webOtaServer.on("/info", HTTP_GET, webOtaHandleInfo);
   webOtaServer.on("/update", HTTP_POST, webOtaHandleUpdatePost, webOtaHandleUpdate);
-  // 判別時間 (seconds)
-  webOtaServer.on("/judgeOnTimeUp", []()
-                  { handleConfigUpdate(judgeOnTime, 100, 100, 10000); });
-  webOtaServer.on("/judgeOnTimeDown", []()
-                  { handleConfigUpdate(judgeOnTime, -100, 100, 10000); });
 
-  // 開始時間 (minutes)
-  webOtaServer.on("/startTimeUp", []()
-                  { handleConfigUpdate(startTime, 1, 1, 65535); });
-  webOtaServer.on("/startTimeDown", []()
-                  { handleConfigUpdate(startTime, -1, 1, 65535); });
-
-  // 継続時間 (minutes)
-  webOtaServer.on("/continueTimeUp", []()
-                  { handleConfigUpdate(continueTime, 1, 1, 65535); });
-  webOtaServer.on("/continueTimeDown", []()
-                  { handleConfigUpdate(continueTime, -1, 1, 65535); });
-  webOtaServer.begin();
+  // カスタム設定のルーティングをセットアップ
+  ota_setup_custom(webOtaServer);
 
   logprintln("[WEB OTA] Ready (Port: 8080)");
   logprintln("[WEB OTA] Access: http://" + WiFi.localIP().toString() + ":8080");
@@ -209,51 +189,8 @@ String otaProcessor(String html)
   html.replace("{{SYS_NAME}}", SYSTEM_NAME);
   html.replace("{{SYS_VER}}", SYSTEM_VERSION);
   html.replace("{{BUILD_DATE}}", __DATE__);
-  html.replace("{{STARTTIME}}", String(startTime));
-  html.replace("{{CONTINUETIME}}", String(continueTime));
-  html.replace("{{JUDGEONTIME}}", String(judgeOnTime));
-  html.replace("{{HISTORYDATA}}", getHistoryData());
-  return html;
-}
 
-// ボタン操作のハンドラー追加
-void setupWebAdminHandlers()
-{
-  // 判別時間 Up/Down
-  webOtaServer.on("/judgeOnTimeDown", HTTP_GET, []()
-                  {
-        if((judgeOnTime - 10) >= 0) judgeOnTime -= 10; // INTERVALTIMEの代わり
-        webOtaServer.sendHeader("Location", "/");
-        webOtaServer.send(303); });
-  webOtaServer.on("/judgeOnTimeUp", HTTP_GET, []()
-                  {
-        judgeOnTime += 10;
-        webOtaServer.sendHeader("Location", "/");
-        webOtaServer.send(303); });
-
-  // 開始時間 Up/Down
-  webOtaServer.on("/startTimeDown", HTTP_GET, []()
-                  {
-        if(startTime > 0) startTime--;
-        webOtaServer.sendHeader("Location", "/");
-        webOtaServer.send(303); });
-  webOtaServer.on("/startTimeUp", HTTP_GET, []()
-                  {
-        startTime++;
-        webOtaServer.sendHeader("Location", "/");
-        webOtaServer.send(303); });
-
-  // 継続時間 Up/Down
-  webOtaServer.on("/continueTimeDown", HTTP_GET, []()
-                  {
-        if(continueTime > 0) continueTime--;
-        webOtaServer.sendHeader("Location", "/");
-        webOtaServer.send(303); });
-  webOtaServer.on("/continueTimeUp", HTTP_GET, []()
-                  {
-        continueTime++;
-        webOtaServer.sendHeader("Location", "/");
-        webOtaServer.send(303); });
+  return otaProcessor_custom(html);
 }
 
 // 共通のインクリメント/デクリメント用関数（共通化しておくと楽です）

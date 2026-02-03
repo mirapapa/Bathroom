@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "ota_common.h": "html",
+        "ota_custom.h": "html",
+    }
+}

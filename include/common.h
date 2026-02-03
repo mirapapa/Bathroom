@@ -10,6 +10,7 @@
 #include "esp_ota_ops.h"
 #include <ESPmDNS.h>
 #include <Preferences.h>
+#include <WebServer.h>
 
 #define SYSTEM_NAME "浴室自動換気システム"
 #define SYSTEM_VERSION "1.1.1"
@@ -88,6 +89,9 @@ bool isWiFiReallyConnected(); // 新規追加
 void ota_setup();
 void verifyFirmware();
 void ota_handle(); // 新規追加
+String getOtaHtml();
+void ota_setup_custom(WebServer &webOtaServer);
+String otaProcessor_custom(String html);
 
 // Watchdog関連
 void watchdog_setup();
