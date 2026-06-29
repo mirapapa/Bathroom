@@ -144,7 +144,8 @@ String getRebootLogJson()
     json += "\"totalReboots\":" + String(rebootLog.totalRebootCount) + ",";
 
     // 現在の稼働時間（秒）
-    json += "\"uptime\":" + String(millis() / 1000) + ",";
+    uint64_t uptimeSec = esp_timer_get_time() / 1000000ULL;
+    json += "\"uptime\":" + String((unsigned long)uptimeSec) + ",";
 
     // レコード配列
     json += "\"records\":[";
@@ -217,7 +218,8 @@ String getRebootLogHtml()
 {
     String html = "<h3>📊 再起動履歴</h3>";
     html += "<p>総再起動回数: <strong>" + String(rebootLog.totalRebootCount) + "回</strong></p>";
-    html += "<p>稼働時間: <strong>" + String(millis() / 1000 / 60) + "分</strong></p>";
+    uint64_t uptimeMin = esp_timer_get_time() / 1000000ULL / 60ULL;
+    html += "<p>稼働時間: <strong>" + String((unsigned long)uptimeMin) + "分</strong></p>";
 
     html += "<table border='1' style='width:100%; border-collapse:collapse;'>";
     html += "<tr><th>日時</th><th>理由</th><th>メッセージ</th></tr>";

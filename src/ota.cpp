@@ -19,7 +19,8 @@ void webOtaHandleRoot()
   html.replace("{{SYS_VER}}", SYSTEM_VERSION);
   html.replace("{{BUILD_DATE}}", __DATE__);
   html.replace("{{RSSI}}", String(WiFi.RSSI()));
-  html.replace("{{UPTIME}}", String(millis() / 1000 / 60)); // 分単位
+  uint64_t uptimeMin = esp_timer_get_time() / 1000000ULL / 60ULL;
+  html.replace("{{UPTIME}}", String((unsigned long)uptimeMin)); // 分単位
 
   webOtaServer.send(200, "text/html", html);
 }
