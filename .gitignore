@@ -8,6 +8,7 @@
 /src/.vscode/launch.json
 /src/.vscode/ipch
 private_settings.ini
+all_code.txt
 
 .DS_Store
 *.bin
