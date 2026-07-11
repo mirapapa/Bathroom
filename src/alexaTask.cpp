@@ -98,6 +98,17 @@ String refleshtoken()
   return access_token;
 }
 
+// 現在時刻をAlexa ChangeReport用のISO8601(UTC)文字列に変換
+String getIso8601UtcTimeStr()
+{
+  time_t t = time(NULL);
+  struct tm tm;
+  gmtime_r(&t, &tm);
+  char str[32];
+  strftime(str, sizeof(str), "%Y-%m-%dT%H:%M:%S.00Z", &tm);
+  return String(str);
+}
+
 void changereport(String access_token, bool detected)
 {
   if (access_token == "")
@@ -112,7 +123,8 @@ void changereport(String access_token, bool detected)
                        access_token +
                        "\"},\"endpointId\":\"sensor-001\"},\"payload\":{\"change\":{\"cause\":{\"type\":\"PHYSICAL_INTERACTION\"},\"properties\":[{\"namespace\":\"Alexa.MotionSensor\",\"name\":\"detectionState\",\"value\":\"" +
                        sensor_state +
-                       "\",\"timeOfSample\":\"2020-03-22T16:20:50.52Z\",\"uncertaintyInMilliseconds\":0}]}}}}";
+                       "\",\"timeOfSample\":\"" + getIso8601UtcTimeStr() +
+                       "\",\"uncertaintyInMilliseconds\":0}]}}}}";
     String header2 = "POST /v3/events HTTP/1.1"
                      "\n"
                      "Authorization: Bearer " +
