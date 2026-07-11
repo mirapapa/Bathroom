@@ -6,6 +6,7 @@
 #include "alexaTask.h"
 #include "udpSync.h"
 #include "ota.h"
+#include "watchdog.h"
 
 // #include <Audio.h>
 // Audio audio(true, I2S_DAC_CHANNEL_LEFT_EN);
@@ -18,8 +19,9 @@ void setup()
 {
   Serial.begin(115200);
 
-  logServersetup(); // logServerのセットアップ
-  sensor_setup();   // sensorのセットアップ
+  logServersetup();  // logServerのセットアップ
+  watchdog_setup();  // Task WDTのセットアップ（タスク起動前に必須）
+  sensor_setup();    // sensorのセットアップ
 
   logprintln(F(""));
   logprintln("***********************************");
