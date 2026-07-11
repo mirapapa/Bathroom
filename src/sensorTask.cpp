@@ -3,6 +3,7 @@
 #include "ota.h"
 #include "alexaTask.h"
 #include "rebootlog.h"
+#include "watchdog.h"
 
 // 定数設定
 // DIO-PIN設定
@@ -112,8 +113,14 @@ void sensor_task(void *pvParameters)
   // アプリバージョン確定
   verifyFirmware();
 
+  // Task WDTに登録（起動待ちのdelayを終えてから。以後ループ内で毎回リセットする）
+  watchdog_subscribe_task("SENSOR_TASK");
+
   while (1)
   {
+    // WDTリセット（ループの最初で実行）
+    watchdog_reset();
+
     nowTime = esp_timer_get_time() / 1000000LL;
 
     // ドア状態取得
