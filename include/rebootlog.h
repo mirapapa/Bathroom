@@ -8,8 +8,6 @@ void loadRebootLog();
 void saveRebootLog();
 void addRebootRecord(esp_reset_reason_t reason, const char *message);
 String getRebootLogJson();
-String getRebootLogHtml();
-void clearRebootLog();
 String getRebootReasonString(esp_reset_reason_t reason);
 esp_reset_reason_t getCurrentRebootReason();
 

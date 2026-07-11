@@ -187,16 +187,6 @@ void ota_handle()
   webOtaServer.handleClient();
 }
 
-// 内部変数をHTMLに埋め込む関数
-String otaProcessor(String html)
-{
-  html.replace("{{SYS_NAME}}", SYSTEM_NAME);
-  html.replace("{{SYS_VER}}", SYSTEM_VERSION);
-  html.replace("{{BUILD_DATE}}", __DATE__);
-
-  return otaProcessor_custom(html);
-}
-
 // 共通のインクリメント/デクリメント用関数（共通化しておくと楽です）
 void handleConfigUpdate(uint16_t &var, int delta, uint16_t min, uint16_t max)
 {

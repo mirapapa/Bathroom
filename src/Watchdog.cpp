@@ -5,11 +5,6 @@
 // Task WDTのタイムアウト時間（秒）
 #define WDT_TIMEOUT 30
 
-// 各タスクのWDT登録状態
-bool ultrasonicSensorWdtSubscribed = false;
-bool spreadsheetWdtSubscribed = false;
-bool logServerWdtSubscribed = false;
-
 void watchdog_setup()
 {
     // Task WDTの初期化（30秒タイムアウト）

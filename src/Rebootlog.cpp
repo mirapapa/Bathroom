@@ -182,19 +182,6 @@ String getRebootLogJson()
     return json;
 }
 
-// 再起動ログをクリア
-void clearRebootLog()
-{
-    preferences.begin(NVS_NAMESPACE, false);
-    preferences.clear();
-    preferences.end();
-
-    // メモリ上のデータもクリア
-    memset(&rebootLog, 0, sizeof(RebootLog));
-
-    logprintln("[REBOOT LOG] Cleared");
-}
-
 // 再起動ログの初期化（setup時に呼び出す）
 void rebootLog_setup()
 {
@@ -212,38 +199,4 @@ void rebootLog_setup()
     addRebootRecord(reason, message);
 
     logprintln("[REBOOT LOG] Initialization complete");
-}
-
-// HTMLで再起動ログを表示（デバッグ用）
-String getRebootLogHtml()
-{
-    String html = "<h3>📊 再起動履歴</h3>";
-    html += "<p>総再起動回数: <strong>" + String(rebootLog.totalRebootCount) + "回</strong></p>";
-    uint64_t uptimeMin = esp_timer_get_time() / 1000000ULL / 60ULL;
-    html += "<p>稼働時間: <strong>" + String((unsigned long)uptimeMin) + "分</strong></p>";
-
-    html += "<table border='1' style='width:100%; border-collapse:collapse;'>";
-    html += "<tr><th>日時</th><th>理由</th><th>メッセージ</th></tr>";
-
-    // 最新から順に表示
-    for (int i = 0; i < rebootLog.recordCount; i++)
-    {
-        int idx = (rebootLog.writeIndex - 1 - i + MAX_REBOOT_RECORDS) % MAX_REBOOT_RECORDS;
-        RebootRecord *record = &rebootLog.records[idx];
-
-        struct tm timeinfo;
-        localtime_r(&record->timestamp, &timeinfo);
-        char timeStr[64];
-        strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeinfo);
-
-        html += "<tr>";
-        html += "<td>" + String(timeStr) + "</td>";
-        html += "<td>" + getRebootReasonString((esp_reset_reason_t)record->rebootReason) + "</td>";
-        html += "<td>" + String(record->message) + "</td>";
-        html += "</tr>";
-    }
-
-    html += "</table>";
-
-    return html;
 }
