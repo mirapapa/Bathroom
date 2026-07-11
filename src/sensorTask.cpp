@@ -20,6 +20,13 @@
 #define BOOL_ON 1            // フラグON
 #define BOOL_OFF 0           // フラグOFF
 
+// フェーズ遷移のタイムアウト値（秒）
+#define PHASE2_NO_MOTION_TIMEOUT_SEC (3 * 60) // 人感知OFF後、確認アナウンス(PHASE_10)へ移行するまでの待機時間
+#define PHASE3_DOOR_SETTLE_SEC 3               // ドアが閉まった直後のセンサ安定待ち時間
+#define PHASE4_JUDGE_SEC 7                     // 再検知判定の猶予時間
+#define PHASE5_CONFIRM_SEC 5                   // 仮判定から確定(PHASE_0)までの待機時間
+#define PHASE10_ANNOUNCE_SEC 20                // 確認アナウンス再生時間
+
 // 変数設定
 uint16_t judgeOnTime = 100; // 人感知判定時間(msec) (intervalTimeの倍数で設定すること)
 uint16_t startTime = 10;    // 人感知OFFからの換気扇開始時間(min)
@@ -122,9 +129,6 @@ void sensor_task(void *pvParameters)
     case PHASE_0:
       if (doorState == (DOOR_OPEN | DOOR_CHANGE))
         migratePhase2();
-      else if (doorState == (DOOR_CLOSE | DOOR_CHANGE))
-      { /*NONE*/
-      }
       if (irState)
         migratePhase2();
       else if (difftime(nowTime, phaseStartTime[PHASE_0]) >= ((unsigned long)continueTime * 60 * 60))
@@ -136,27 +140,18 @@ void sensor_task(void *pvParameters)
       // [電気：OFF、換気扇：OFF、音楽：OFF]
       if (doorState == (DOOR_OPEN | DOOR_CHANGE))
         migratePhase2();
-      else if (doorState == (DOOR_CLOSE | DOOR_CHANGE))
-      { /*NONE*/
-      }
       if (irState)
         migratePhase2();
-      else
-      { /*NONE*/
-      }
       break;
 
     // PHASE_2 : 人を検知している状態。
     // [電気：ON 、換気扇：OFF、音楽：ON ]
     case PHASE_2:
-      if (doorState == (DOOR_OPEN | DOOR_CHANGE))
-      { /*NONE*/
-      }
-      else if (doorState == (DOOR_CLOSE | DOOR_CHANGE))
+      if (doorState == (DOOR_CLOSE | DOOR_CHANGE))
         migratePhase3();
       if (irState)
         phaseStartTime[PHASE_2] = nowTime;
-      else if (difftime(nowTime, phaseStartTime[PHASE_2]) >= (3 * 60))
+      else if (difftime(nowTime, phaseStartTime[PHASE_2]) >= PHASE2_NO_MOTION_TIMEOUT_SEC)
         migratePhase10();
       break;
 
@@ -165,13 +160,7 @@ void sensor_task(void *pvParameters)
     case PHASE_3:
       if (doorState == (DOOR_OPEN | DOOR_CHANGE))
         migratePhase2();
-      else if (doorState == (DOOR_CLOSE | DOOR_CHANGE))
-      { /*NONE*/
-      }
-      if (irState)
-      { /*NONE*/
-      }
-      else if (difftime(nowTime, phaseStartTime[PHASE_3]) >= 3)
+      if (!irState && difftime(nowTime, phaseStartTime[PHASE_3]) >= PHASE3_DOOR_SETTLE_SEC)
         migratePhase4();
       break;
 
@@ -180,12 +169,9 @@ void sensor_task(void *pvParameters)
     case PHASE_4:
       if (doorState == (DOOR_OPEN | DOOR_CHANGE))
         migratePhase2();
-      else if (doorState == (DOOR_CLOSE | DOOR_CHANGE))
-      { /*NONE*/
-      }
       if (irState)
         migratePhase2();
-      else if (difftime(nowTime, phaseStartTime[PHASE_4]) >= 7)
+      else if (difftime(nowTime, phaseStartTime[PHASE_4]) >= PHASE4_JUDGE_SEC)
         migratePhase5();
       break;
 
@@ -194,12 +180,9 @@ void sensor_task(void *pvParameters)
     case PHASE_5:
       if (doorState == (DOOR_OPEN | DOOR_CHANGE))
         migratePhase2();
-      else if (doorState == (DOOR_CLOSE | DOOR_CHANGE))
-      { /*NONE*/
-      }
       if (irState)
         migratePhase2();
-      else if (difftime(nowTime, phaseStartTime[PHASE_5]) >= 5)
+      else if (difftime(nowTime, phaseStartTime[PHASE_5]) >= PHASE5_CONFIRM_SEC)
         migratePhase0();
       break;
 
@@ -222,7 +205,7 @@ void sensor_task(void *pvParameters)
         // audio.connecttoFS(SPIFFS, "/Detected.mp3");
         migratePhase2();
       }
-      else if (difftime(nowTime, phaseStartTime[PHASE_10]) >= 20)
+      else if (difftime(nowTime, phaseStartTime[PHASE_10]) >= PHASE10_ANNOUNCE_SEC)
         migratePhase11();
       break;
 
@@ -233,12 +216,6 @@ void sensor_task(void *pvParameters)
         migratePhase2();
       else if (doorState == (DOOR_CLOSE | DOOR_CHANGE))
         migratePhase3();
-      if (irState)
-      { /*NONE*/
-      }
-      else
-      { /*NONE*/
-      }
       break;
 
     default:

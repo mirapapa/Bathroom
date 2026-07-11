@@ -57,50 +57,42 @@ void alexa_task(void *pvParameters)
 
 static String refleshtoken()
 {
-  WiFiClientSecure https_refleshtoken_client;
+  WiFiClientSecure client;
+  client.setInsecure();
 
-  https_refleshtoken_client.setInsecure();
-  if (https_refleshtoken_client.connect(HOST_REFRESH_TOKEN, 443))
+  HTTPClient http;
+  if (!http.begin(client, String("https://") + HOST_REFRESH_TOKEN + "/auth/o2/token"))
   {
-    String postData = "grant_type=refresh_token&refresh_token=" + REFRESH_TOKEN +
-                      "&client_id=" + ALEXA_CLIENT_ID_STR +
-                      "&client_secret=" + ALEXA_CLIENT_SECRET_STR;
-    String header = "POST /auth/o2/token HTTP/1.1"
-                    "\n"
-                    "Content-Length: " +
-                    String(postData.length()) + "\n"
-                                                "Host: " +
-                    HOST_REFRESH_TOKEN + "\n"
-                                         "Content-Type: application/x-www-form-urlencoded;Accept-Charset=UTF-8"
-                                         "\n"
-                                         "\n";
-    https_refleshtoken_client.print(header + postData);
-    Serial.print(header + postData);
-  }
-  else
-  {
-    Serial.println(F("------connection failed"));
-    https_refleshtoken_client.stop();
+    logprintln("[Alexa] refleshtoken: begin failed");
     return "";
   }
-  String res = https_refleshtoken_client.readString();
-  // Serial.println(res);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded;Accept-Charset=UTF-8");
+
+  String postData = "grant_type=refresh_token&refresh_token=" + REFRESH_TOKEN +
+                     "&client_id=" + ALEXA_CLIENT_ID_STR +
+                     "&client_secret=" + ALEXA_CLIENT_SECRET_STR;
+
+  int httpCode = http.POST(postData);
+  if (httpCode != HTTP_CODE_OK)
+  {
+    logprintln("[Alexa] refleshtoken: request failed (code " + String(httpCode) + ")");
+    http.end();
+    return "";
+  }
+
+  String res = http.getString();
+  http.end();
+
   String serchWord = "access_token";
   int po_start_serchWord = res.indexOf(serchWord);
-  String access_token;
-  if (po_start_serchWord)
-  {
-    int po_start_access_token = res.indexOf("\"", po_start_serchWord + serchWord.length() + 1);
-    int po_end_access_token = res.indexOf("\"", po_start_access_token + 1);
-    access_token = res.substring(po_start_access_token + 1, po_end_access_token);
-  }
-  else
-  {
+  if (po_start_serchWord < 0)
     return "";
-  }
-  logprintln("access_token : " + access_token);
-  https_refleshtoken_client.stop();
 
+  int po_start_access_token = res.indexOf("\"", po_start_serchWord + serchWord.length() + 1);
+  int po_end_access_token = res.indexOf("\"", po_start_access_token + 1);
+  String access_token = res.substring(po_start_access_token + 1, po_end_access_token);
+
+  logprintln("access_token : " + access_token);
   return access_token;
 }
 
@@ -120,41 +112,38 @@ static void changereport(String access_token, bool detected)
   if (access_token == "")
     return;
 
-  WiFiClientSecure https_changereport_client;
-  String sensor_state = detected ? "DETECTED" : "NOT_DETECTED";
-  https_changereport_client.setInsecure();
-  if (https_changereport_client.connect(HOST_CHANGEREPORT, 443))
+  WiFiClientSecure client;
+  client.setInsecure();
+
+  HTTPClient http;
+  if (!http.begin(client, String("https://") + HOST_CHANGEREPORT + "/v3/events"))
   {
-    String postData2 = "{\"context\":{},\"event\":{\"header\":{\"messageId\":\"tkr-123-def-456\",\"namespace\":\"Alexa\",\"name\":\"ChangeReport\",\"payloadVersion\":\"3\"},\"endpoint\":{\"scope\":{\"type\":\"BearerToken\",\"token\":\"" +
+    logprintln("[Alexa] changereport: begin failed");
+    return;
+  }
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", "Bearer " + access_token);
+
+  String sensor_state = detected ? "DETECTED" : "NOT_DETECTED";
+  String postData2 = "{\"context\":{},\"event\":{\"header\":{\"messageId\":\"tkr-123-def-456\",\"namespace\":\"Alexa\",\"name\":\"ChangeReport\",\"payloadVersion\":\"3\"},\"endpoint\":{\"scope\":{\"type\":\"BearerToken\",\"token\":\"" +
                        access_token +
                        "\"},\"endpointId\":\"sensor-001\"},\"payload\":{\"change\":{\"cause\":{\"type\":\"PHYSICAL_INTERACTION\"},\"properties\":[{\"namespace\":\"Alexa.MotionSensor\",\"name\":\"detectionState\",\"value\":\"" +
                        sensor_state +
                        "\",\"timeOfSample\":\"" + getIso8601UtcTimeStr() +
                        "\",\"uncertaintyInMilliseconds\":0}]}}}}";
-    String header2 = "POST /v3/events HTTP/1.1"
-                     "\n"
-                     "Authorization: Bearer " +
-                     access_token + "\n"
-                                    "Content-Length: " +
-                     postData2.length() + "\n"
-                                          "Content-Type: application/json\nHost: api.fe.amazonalexa.com"
-                                          "\n"
-                                          "\n";
-    https_changereport_client.print(header2 + postData2);
-    Serial.print(header2 + postData2);
-  }
-  else
+
+  int httpCode = http.POST(postData2);
+  if (httpCode <= 0)
   {
-    Serial.println(F("------connection failed"));
-    https_changereport_client.stop();
+    logprintln("[Alexa] changereport: request failed (" + http.errorToString(httpCode) + ")");
+    http.end();
     return;
   }
-  String res2 = https_changereport_client.readString();
-  Serial.println(res2);
-  https_changereport_client.stop();
+
+  logprintln("[Alexa] changereport response(" + String(httpCode) + "): " + http.getString());
+  http.end();
 
   nowMusicFlg = detected;
-  return;
 }
 
 void alexaChangeReport(bool detected)
