@@ -1,4 +1,8 @@
-#include "common.h"
+#include "sensorTask.h"
+#include "logging.h"
+#include "ota.h"
+#include "alexaTask.h"
+#include "rebootlog.h"
 
 // 定数設定
 // DIO-PIN設定
@@ -44,6 +48,22 @@ bool exhaustfanState;
 DeviceState prev_deviceState;
 SendRecvData recv_deviceState;
 SendRecvData send_deviceState;
+
+// このファイル内でのみ使用する内部関数
+static byte getDoorState(byte pre_doorState);
+static byte getIrState();
+static void migratePhase0();
+static void migratePhase1();
+static void migratePhase2();
+static void migratePhase3();
+static void migratePhase4();
+static void migratePhase5();
+static void migratePhase10();
+static void migratePhase11();
+static void detectON();
+static void detectOFF();
+static void setExhaustfanState(bool state);
+static void loadConfig();
 
 void sensor_setup()
 {
@@ -233,7 +253,7 @@ void sensor_task(void *pvParameters)
 }
 
 // ドア状態取得
-byte getDoorState(byte pre_doorState)
+static byte getDoorState(byte pre_doorState)
 {
   byte doorState = DOOR_CLOSE;
   byte reedDigital = digitalRead(REED_SW);
@@ -259,7 +279,7 @@ byte getDoorState(byte pre_doorState)
 }
 
 // 人感センサー状態取得
-byte getIrState()
+static byte getIrState()
 {
   static uint16_t countOn = 0;
   static uint16_t countOff = 0;
@@ -294,7 +314,7 @@ byte getIrState()
 }
 
 // フェーズ0移行
-void migratePhase0()
+static void migratePhase0()
 {
   logprintln("■フェーズ０へ移行■");
   detectOFF();
@@ -302,7 +322,7 @@ void migratePhase0()
   phase = PHASE_0;
 }
 // フェーズ1移行
-void migratePhase1()
+static void migratePhase1()
 {
   logprintln("■フェーズ１へ移行■");
   logprintln("<<浴室換気完了 ⇒ 電気ＯＦＦ 換気扇ＯＦＦ>>", 1);
@@ -312,7 +332,7 @@ void migratePhase1()
   phase = PHASE_1;
 }
 // フェーズ2移行
-void migratePhase2()
+static void migratePhase2()
 {
   logprintln("■フェーズ２へ移行■");
   detectON();
@@ -320,14 +340,14 @@ void migratePhase2()
   phase = PHASE_2;
 }
 // フェーズ3移行
-void migratePhase3()
+static void migratePhase3()
 {
   logprintln("■フェーズ３へ移行■");
   phaseStartTime[PHASE_3] = nowTime;
   phase = PHASE_3;
 }
 // フェーズ4移行
-void migratePhase4()
+static void migratePhase4()
 {
   logprintln("■フェーズ４へ移行■");
   phaseStartTime[PHASE_4] = nowTime;
@@ -335,7 +355,7 @@ void migratePhase4()
 }
 
 // フェーズ5移行
-void migratePhase5()
+static void migratePhase5()
 {
   logprintln("■フェーズ５へ移行■");
   digitalWrite(LIGHT_SWITCH, SWITCH_OFF);
@@ -344,7 +364,7 @@ void migratePhase5()
 }
 
 // フェーズ10移行
-void migratePhase10()
+static void migratePhase10()
 {
   logprintln("■フェーズ１０へ移行■");
   // audio.connecttoFS(SPIFFS, "/Not_detected.mp3");
@@ -353,7 +373,7 @@ void migratePhase10()
 }
 
 // フェーズ11移行
-void migratePhase11()
+static void migratePhase11()
 {
   logprintln("■フェーズ１１へ移行■");
   setExhaustfanState(SWITCH_ON);
@@ -364,7 +384,7 @@ void migratePhase11()
 }
 
 // 検知ONの時に実行する内容
-void detectON()
+static void detectON()
 {
   logprintln("<<人感知ＯＮ　 ⇒ 電気ＯＮ　 換気扇ＯＦＦ>>", 1);
   digitalWrite(LIGHT_SWITCH, SWITCH_ON);
@@ -377,7 +397,7 @@ void detectON()
   }
 }
 // 検知OFFの時に実行する内容
-void detectOFF()
+static void detectOFF()
 {
   logprintln("<<人感知ＯＦＦ ⇒ 電気ＯＦＦ 換気扇ＯＮ　>>", 1);
   digitalWrite(LIGHT_SWITCH, SWITCH_OFF);
@@ -387,7 +407,7 @@ void detectOFF()
 }
 
 // 換気扇のON/OFF状態を設定
-void setExhaustfanState(bool state)
+static void setExhaustfanState(bool state)
 {
   exhaustfanState = state;
   if (manualExhaustfanFlg == BOOL_OFF)
@@ -431,7 +451,7 @@ void manualMusic()
 }
 
 // NVSから設定を読み込む
-void loadConfig()
+static void loadConfig()
 {
   preferences.begin("system", true); // "system"という名前の領域を読み取り専用で開く
   // 保存されていなければ第2引数のデフォルト値が使われる

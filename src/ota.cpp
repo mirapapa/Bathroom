@@ -1,4 +1,7 @@
-#include "common.h"
+#include "ota.h"
+#include "logging.h"
+#include "rebootlog.h"
+#include "sensorTask.h"
 #include <WebServer.h>
 #include <Update.h>
 #include "ota_custom.h"

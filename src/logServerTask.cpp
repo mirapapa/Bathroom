@@ -1,4 +1,5 @@
-#include "common.h"
+#include "logging.h"
+#include "watchdog.h"
 
 #define MAX_HISTORYDATA 64
 #define MAX_QUENUM 128
@@ -14,6 +15,9 @@ typedef struct
   String data[MAX_HISTORYDATA];
 } HISTORYDATA;
 HISTORYDATA historyData;
+
+static uint nextnum(uint num);
+static uint prevnum(uint num);
 
 void logServersetup()
 {
@@ -146,7 +150,7 @@ String getHistoryData()
   return strbuf;
 }
 
-uint nextnum(uint num)
+static uint nextnum(uint num)
 {
   if (num >= (MAX_HISTORYDATA - 1))
     return 0;
@@ -154,7 +158,7 @@ uint nextnum(uint num)
     return num + 1;
 }
 
-uint prevnum(uint num)
+static uint prevnum(uint num)
 {
   if (num == 0)
     return MAX_HISTORYDATA - 1;

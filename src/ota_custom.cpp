@@ -1,5 +1,7 @@
-#include "common.h"
 #include "ota_custom.h"
+#include "ota.h"
+#include "sensorTask.h"
+#include "logging.h"
 
 // 最終的なHTMLを生成する関数
 String getOtaHtml()

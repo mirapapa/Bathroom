@@ -1,4 +1,7 @@
-#include "common.h"
+#include "udpSync.h"
+#include "logging.h"
+#include "sensorTask.h"
+#include "alexaTask.h"
 
 void udpSend_setup(void)
 {

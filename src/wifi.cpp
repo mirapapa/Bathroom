@@ -1,4 +1,5 @@
-#include "common.h"
+#include "wifiConnection.h"
+#include "logging.h"
 
 const char ssid[] = WIFI_SSID;
 const char pass[] = WIFI_PASS;

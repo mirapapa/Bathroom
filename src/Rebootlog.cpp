@@ -1,4 +1,5 @@
-#include "common.h"
+#include "rebootlog.h"
+#include "logging.h"
 #include <Preferences.h>
 #include "esp_system.h"
 

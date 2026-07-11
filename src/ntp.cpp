@@ -1,4 +1,6 @@
-#include "common.h"
+#include "ntp.h"
+#include "logging.h"
+#include "rebootlog.h"
 
 bool firstTimeNtpFlg = false;
 

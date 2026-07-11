@@ -1,4 +1,11 @@
 #include "common.h"
+#include "logging.h"
+#include "sensorTask.h"
+#include "ntp.h"
+#include "wifiConnection.h"
+#include "alexaTask.h"
+#include "udpSync.h"
+#include "ota.h"
 
 // #include <Audio.h>
 // Audio audio(true, I2S_DAC_CHANNEL_LEFT_EN);

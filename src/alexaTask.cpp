@@ -1,4 +1,5 @@
-#include "common.h"
+#include "alexaTask.h"
+#include "logging.h"
 
 #define MAX_QUE2NUM 1
 #define MAX_QUE2SIZE 1
@@ -12,6 +13,11 @@ const char *HOST_CHANGEREPORT = ALEXA_HOST_CHANGEREPORT;
 
 QueueHandle_t queue2;
 bool nowMusicFlg = 0;
+
+// このファイル内でのみ使用する内部関数
+static String refleshtoken();
+static void changereport(String access_token, bool detected);
+static String getIso8601UtcTimeStr();
 
 void alexasetup()
 {
@@ -49,7 +55,7 @@ void alexa_task(void *pvParameters)
   vTaskDelete(NULL);
 }
 
-String refleshtoken()
+static String refleshtoken()
 {
   WiFiClientSecure https_refleshtoken_client;
 
@@ -99,7 +105,7 @@ String refleshtoken()
 }
 
 // 現在時刻をAlexa ChangeReport用のISO8601(UTC)文字列に変換
-String getIso8601UtcTimeStr()
+static String getIso8601UtcTimeStr()
 {
   time_t t = time(NULL);
   struct tm tm;
@@ -109,7 +115,7 @@ String getIso8601UtcTimeStr()
   return String(str);
 }
 
-void changereport(String access_token, bool detected)
+static void changereport(String access_token, bool detected)
 {
   if (access_token == "")
     return;

@@ -1,4 +1,6 @@
-#include "common.h"
+#include "udpSync.h"
+#include "logging.h"
+#include "sensorTask.h"
 
 WiFiUDP udp;
 char packetBuffer[256];

@@ -1,4 +1,5 @@
-#include "common.h"
+#include "watchdog.h"
+#include "logging.h"
 #include "esp_task_wdt.h"
 
 // Task WDTのタイムアウト時間（秒）
